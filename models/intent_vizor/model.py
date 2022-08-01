@@ -1,15 +1,17 @@
 import math
 import torch
 import torch.nn as nn
+from .attention import Attention
 from .score_net import ScoreNet
-from models.intent_vizor.score_net.branch_score_net import BranchScoreNet, LateFusionScoreNet, MiddleFusionScoreNet
-from models.intent_vizor.intent_net.topic_net import TopicNet
-from models.intent_vizor.intent_net.topic_graph_net import TopicGraphNet
-from models.intent_vizor.intent_net.branch_topic_graph_net import BranchTopicGraphNet
+from .branch_score_net import BranchScoreNet, LateFusionScoreNet, MiddleFusionScoreNet
+from .topic_net import TopicNet
+from .topic_graph_net import TopicGraphNet
+from .branch_topic_graph_net import BranchTopicGraphNet
 from .feature_encoder import FeatureEncoder
 from .embedding import VariationalEmbedding, VanillaEmbedding
-from models.intent_vizor.intent_net.query_decoder import QueryDecoder
-from models.intent_vizor.intent_net.video_agnostic_topic_net import VideoAttentionTopicNet, VideoAgnosticTopicNet
+from .query_decoder import QueryDecoder
+from .video_agnostic_topic_net import VideoAttentionTopicNet, VideoAgnosticTopicNet
+from .plain_feature import PlainFeatureEncoder
 
 
 class TopicAwareModel(nn.Module):
@@ -29,7 +31,8 @@ class TopicAwareModel(nn.Module):
                  topic_embedding_type="vanilla", topic_embedding_truncation=0,
                  score_net_gcn_num_layer=1, topic_net_gcn_num_layer=1, score_net_similarity_module="inner_product",
                  branch_type="dual", local_gcn_num_layer=1, query_decoder_hidden_dim=256,
-                 topic_embedding_non_linear_mlp=False, gcn_mode=None, local_gcn_mode=None, local_gcn_use_pooling=False
+                 topic_embedding_non_linear_mlp=False, gcn_mode=None, local_gcn_mode=None, local_gcn_use_pooling=False,
+                 intent_dropout=0, score_branch_net="gcn", topic_branch_net="transformer", feature_encoder="fast_slow"
 
                  ):
         nn.Module.__init__(self)
@@ -59,8 +62,13 @@ class TopicAwareModel(nn.Module):
             self.topic_embedding = VariationalEmbedding(topic_num, topic_embedding_dim,
                                                         truncation=topic_embedding_truncation,
                                                         non_linear_mlp=topic_embedding_non_linear_mlp)
-        self.feature_encoder = FeatureEncoder(device=device,
+
+        if feature_encoder == "fast_slow":
+            self.feature_encoder = FeatureEncoder(device=device,
                                               slow_feature_dim=slow_feature_dim, fast_feature_dim=fast_feature_dim)
+        elif feature_encoder == "plain":
+            self.feature_encoder = PlainFeatureEncoder()
+
         self.query_decoder = QueryDecoder(topic_embedding_dim=topic_embedding_dim, hidden_dim=query_decoder_hidden_dim,
                                           query_embedding_dim=concept_dim)
         if branch_type == "dual":
@@ -140,7 +148,7 @@ class TopicAwareModel(nn.Module):
                                             similarity_module=score_net_similarity_module,
                                             use_fast_branch=self.use_fast_branch, use_slow_branch=self.use_slow_branch,
                                             local_gcn_num_layer=local_gcn_num_layer, local_gcn_mode=local_gcn_mode,
-                                            gcn_mode=gcn_mode
+                                            gcn_mode=gcn_mode, branch_net=score_branch_net
                                             )
 
         if topic_net == "graph":
@@ -155,7 +163,8 @@ class TopicAwareModel(nn.Module):
                                                ego_gcn_num=topic_net_gcn_num_layer,
                                                k=k, gcn_groups=gcn_groups, gcn_conv_groups=gcn_conv_groups,
                                                dropout=dropout,
-                                               gcn_mode=gcn_mode
+                                               gcn_mode=gcn_mode,
+                                               intent_dropout=intent_dropout
                                                )
             else:
                 self.topic_net = BranchTopicGraphNet(device=device, topic_num=topic_num, concept_dim=concept_dim,
@@ -171,7 +180,7 @@ class TopicAwareModel(nn.Module):
                                                      dropout=dropout,
                                                      use_slow_branch=self.use_slow_branch,
                                                      use_fast_branch=self.use_fast_branch,
-                                                     gcn_mode=gcn_mode
+                                                     gcn_mode=gcn_mode, branch_net=topic_branch_net
                                                      )
         elif topic_net == "video_agnostic":
             self.topic_net = VideoAgnosticTopicNet(device=device, topic_num=topic_num, concept_dim=concept_dim,

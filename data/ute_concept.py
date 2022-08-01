@@ -37,7 +37,19 @@ class UTEQueryDataset(Dataset):
         #     for _ , _, files in os.walk("./data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
         #         for file in files:
         #             self.dataset.append(file[:file.find("_oracle.txt")]+"_"+str(video_id))
-        self.embedding=load_pickle(self.dictionary_path)
+        self.embedding = {}
+        if self.dictionary_path.endswith("txt"):
+            with open(self.dictionary_path) as fp:
+                for line in fp.readlines():
+                    splits = line.strip().split()
+                    if len(splits) != 301:
+                        continue
+                    word = splits[0]
+                    vector = splits[1:]
+                    vector = list(map(lambda x: float(x), vector))
+                    self.embedding[word] = vector
+        else:
+            self.embedding=load_pickle(self.dictionary_path)
         self.shot_tag_dir = shot_tag_dir
         self.max_segment_num = 20
         self.max_frame_num = 200
@@ -73,8 +85,8 @@ class UTEQueryDataset(Dataset):
             concept1=transfer[concept1]
         if concept2 in transfer:
             concept2=transfer[concept2]
-        concept1_embedding=self.embedding[concept1]
-        concept2_embedding=self.embedding[concept2]
+        concept1_embedding=torch.Tensor(self.embedding[concept1])
+        concept2_embedding=torch.Tensor(self.embedding[concept2])
         gt_summary = self.gt_summaries[record_entry]
         return features,seg_len,concept1_embedding,concept2_embedding,concept1_GT,concept2_GT,mask_GT, \
                video_id, concept1, concept2, gt_summary
@@ -118,4 +130,22 @@ def get_ute_query_loader(videos, config, drop_last=False, shuffle=False):
     data_loader = DataLoader(UTEQueryDataset(oracle_summaries=oracle_summaries, dictionary_path=config.dictionary_path,
                                              shot_tag_dir=shot_tag_dir, feature_dir=config.feature_dir, gt_summaries=gt_summaries
                                              ), shuffle=shuffle,collate_fn=collate_fn, batch_size=config.batch_size, drop_last=drop_last)
+    return data_loader
+
+
+def get_video_query_loader(video_feature_dir, config, drop_last=False, shuffle=False):
+    oracle_summaries = [
+        "Street_Men_P01", "Men_Men_P01", "Car_Car_P01", "Car_Street_P01", "Car_Signal_P01", "Signal_Light_P01",
+        "Sign_Road_P01", "Sign_Board_P01"
+    ]
+    shot_tag_dir = os.path.join(config.annotation_dir, "Dense_per_shot_tags")
+    gt_summaries = {}
+    for entry in oracle_summaries:
+        gt_summaries[entry] = [1, 2, 3]
+    print(video_feature_dir)
+    data_loader = DataLoader(UTEQueryDataset(oracle_summaries=oracle_summaries, dictionary_path=config.dictionary_path,
+                                             shot_tag_dir=shot_tag_dir, feature_dir=video_feature_dir,
+                                             gt_summaries=gt_summaries
+                                             ), shuffle=shuffle, collate_fn=collate_fn, batch_size=config.batch_size,
+                             drop_last=drop_last)
     return data_loader

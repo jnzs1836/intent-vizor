@@ -1,7 +1,7 @@
 from solvers import QueryFocusedSolver, QueryFocusedDeploymentSolver, ShotQueryFocusedSolver
 from exceptions import InvalidSolverException, InvalidModelException
 from .model_factory import build_summarizer, build_compressor, build_discriminator, build_critic, build_gt_summarizer
-from .model_factory import build_chan, build_topic_aware, build_topic_absent, build_shot_query_topic_aware, build_shot_query_baseline, build_shot_random_guess, build_shot_linear_baseline
+from .model_factory import build_topic_aware, build_topic_absent, build_shot_query_topic_aware, build_shot_query_baseline, build_shot_random_guess, build_shot_linear_baseline
 import pickle
 
 
@@ -99,20 +99,7 @@ def build_shot_query_focused_solver(config):
         model = build_shot_query_baseline(config)
     elif config.summarizer == "random":
         model = build_shot_random_guess(config)
-    else:
-        model_config = {
-            "similarity_dim": 1000,
-            "concept_dim": 300,
-            "in_channel": 2048,
-            "conv1_channel": 512,
-            "conv2_channel": 256,
-            "deconv1_channel": 1024,
-            "deconv2_channel": 1024,
-            "max_segment_num": 20,
-            "max_frame_num": 200,
-            "device": config.device
-        }
-        model = build_chan(model_config)
+
     solver.build(model)
     return solver
 

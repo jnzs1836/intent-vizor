@@ -19,4 +19,4 @@ python train_qfvsum.py \
      --score_net_gcn_num_layer 3 --topic_net_gcn_num_layer 3 --local_graph_k 10 \
      --score_net_similarity_module inner_product --branch_type dual --pretrain_embedding_epochs 0 \
      --topic_embedding_non_linear_mlp True --n_epochs 121 --shot_score_variety_loss_weight 0 --gcn_mode mutual_map \
-     --local_gcn_mode mutual_map --local_gcn_use_pooling False
+     --local_gcn_mode mutual_map --local_gcn_use_pooling False --summarizer=TopicAware

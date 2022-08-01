@@ -22,7 +22,6 @@ def build_discriminator(config):
         raise InvalidModelException(config.discriminator)
 
 
-
 def build_compressor(config):
     if config.compressor == "SUM-GAN":
         return build_sum_gan_compressor(config)
