@@ -68,7 +68,7 @@ def get_query_focus_config(parse=True, **optional_kwargs):
     parser.add_argument('--num_layers', type=int, default=2)
     parser.add_argument('--summary_rate', type=float, default=0.3)
     parser.add_argument('--dropout', type=float, default=0)
-
+    parser.add_argument("--intent_dropout", type=int, default=0)
     parser.add_argument("--concept_dim", type=int, default=300)
 
     parser.add_argument("--warmup_multiplier", type=float, default=1)
@@ -82,6 +82,7 @@ def get_query_focus_config(parse=True, **optional_kwargs):
     parser.add_argument("--mlp_activation", type=str, default="relu")
     parser.add_argument("--non_linearity_delay", type=int, default=0)
     parser.add_argument("--branch_type", type=str, default="dual")
+    parser.add_argument("--feature_encoder", type=str, default="fast_slow")
 
     parser.add_argument("--gcn_mode", type=str, default="cat")
     parser.add_argument("--local_gcn_mode", type=str, default="cat")
@@ -121,6 +122,9 @@ def get_query_focus_config(parse=True, **optional_kwargs):
     parser.add_argument("--score_net_norm_layer", type=str, default="batch")
     parser.add_argument("--score_net_gcn_num_layer", type=int, default=1)
     parser.add_argument("--score_net_similarity_module", type=str, default="inner_product")
+
+    parser.add_argument("--score_branch_net", type=str, default="gcn")
+    parser.add_argument("--topic_branch_net", type=str, default="gcn")
 
     parser.add_argument("--local_gcn_num_layer", type=int, default=1)
 

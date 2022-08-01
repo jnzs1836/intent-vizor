@@ -1,6 +1,6 @@
 from solvers import QueryFocusedSolver, QueryFocusedDeploymentSolver, ShotQueryFocusedSolver
 from exceptions import InvalidSolverException, InvalidModelException
-from .model_factory import build_summarizer, build_compressor, build_discriminator, build_critic, build_gt_summarizer
+from .model_factory import build_summarizer, build_compressor, build_discriminator, build_critic
 from .model_factory import build_topic_aware, build_topic_absent, build_shot_query_topic_aware, build_shot_query_baseline, build_shot_random_guess, build_shot_linear_baseline
 import pickle
 

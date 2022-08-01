@@ -14,6 +14,24 @@ def build_summarizer(config, supervised=False):
     else:
         raise InvalidModelException(config.summarizer)
 
+def build_sum_gan_critic(config):
+    use_patch = True
+    if config.critic == "SUM-GAN-NoPatch":
+        use_patch = False
+    return Critic(
+        input_size=config.hidden_size,
+        hidden_size=config.hidden_size,
+        num_layers=config.num_layers,
+        use_patch = use_patch
+    ).cuda()
+
+
+def build_critic(config):
+    if config.critic.startswith("SUM-GAN"):
+        return build_sum_gan_critic(config)
+    else:
+        raise InvalidModelException(config.critic)
+
 
 def build_discriminator(config):
     if config.discriminator == "SUM-GAN":
@@ -69,9 +87,13 @@ def build_topic_aware(config):
         topic_embedding_non_linear_mlp=config.topic_embedding_non_linear_mlp,
         gcn_mode=config.gcn_mode,
         local_gcn_mode=config.local_gcn_mode,
-        local_gcn_use_pooling=config.local_gcn_use_pooling
+        local_gcn_use_pooling=config.local_gcn_use_pooling,
+        intent_dropout=config.intent_dropout,
+        score_branch_net=config.score_branch_net,
+        topic_branch_net=config.topic_branch_net,
+        feature_encoder=config.feature_encoder
     )
-
+    
 
 def build_shot_query_topic_aware(config):
     model = TopicAwareShotModel(

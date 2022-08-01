@@ -1,7 +1,37 @@
+import math
 import torch
 import torch.nn as nn
-from models.intent_vizor.score_net.attention import Attention
-from models.intent_vizor.gcn.gcn_stream import GraphStream
+from ..score_net.attention import Attention
+from ..score_net import ScoreNet
+from ..gcn.gcn_stream import GraphStream
+
+
+class IntentDropout(nn.Module):
+    def __init__(self, p=0):
+        nn.Module.__init__(self)
+        self.p = p
+
+    def forward(self, x):
+        if not self.training:
+            return x
+        _, indices = torch.sort(x, descending=True)
+        indices = indices.detach()
+        indices = indices[:, :self.p]
+        # max_index = torch.argmax(x, dim=1).detach()
+        mask = torch.ones_like(x)
+        # mask = torch.ones_like(x).scatter_(0, indices, 0).detach()
+        for i in range(indices.size(0)):
+            for j in range(indices.size(1)):
+                x[i, indices[i, j]] = -1000
+        # print(indices.cpu())
+        # print(x)
+        x = mask * x
+        # print(indices)
+        # print(x)
+        return x
+
+
+
 
 class TopicGraphNet(nn.Module):
     def __init__(self, device, topic_num,
@@ -9,7 +39,7 @@ class TopicGraphNet(nn.Module):
                  slow_feature_dim=256, fast_feature_dim=128, dropout=0.5,
                  feature_transformer_head=8, feature_transformer_layer=3,
                  query_attention_head=4, gcn_groups=32, gcn_conv_groups=4, k=6,
-                 ego_gcn_num=1, gcn_mode=None
+                 ego_gcn_num=1, gcn_mode=None, intent_dropout=0
 
                  ):
         nn.Module.__init__(self)
@@ -25,6 +55,8 @@ class TopicGraphNet(nn.Module):
         #     nn.Linear(hidden_dim // 2, topic_num),
         #     nn.Softmax(dim=1)
         # )
+
+        self.intent_dropout_rate = intent_dropout
         self.mlp = self.make_topic_mlp(concept_dim, slow_feature_dim, fast_feature_dim, num_hidden_layer, hidden_dim,
                                        topic_num, dropout)
         self.slow_feature_dim = slow_feature_dim
@@ -57,7 +89,7 @@ class TopicGraphNet(nn.Module):
 
     def make_topic_mlp(self, concept_dim, slow_feature_dim, fast_feature_dim, num_hidden_layer, hidden_dim, topic_num, dropout):
         layers = []
-        layers.append(nn.Linear(concept_dim * 2 + slow_feature_dim + fast_feature_dim, hidden_dim))
+        layers.append(nn.Linear(concept_dim * 2 + slow_feature_dim + fast_feature_dim, hidden_dim, bias=False))
         nn.init.normal_(layers[-1].weight.data, 0, 1)
         layers.append(nn.BatchNorm1d(num_features=hidden_dim))
         layers.append(nn.ReLU())
@@ -67,16 +99,17 @@ class TopicGraphNet(nn.Module):
                 linear_input = hidden_dim
             else:
                 linear_input = hidden_dim // 2
-            layers.append(nn.Linear(linear_input, hidden_dim // 2))
+            layers.append(nn.Linear(linear_input, hidden_dim // 2, bias=False))
             nn.init.normal_(layers[-1].weight.data, 0, 1)
             layers.append(nn.BatchNorm1d(num_features=hidden_dim // 2))
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(p=dropout))
 
         # add the last layer
-        output_linear = nn.Linear(hidden_dim // 2, topic_num)
+        output_linear = nn.Linear(hidden_dim // 2, topic_num, bias=False)
         # nn.init.normal_(output_linear.weight.data, 0, 1)
         layers.append(output_linear)
+        layers.append(IntentDropout(p=self.intent_dropout_rate))
         layers.append(nn.Softmax(dim=1))
         return nn.Sequential(*layers)
 
@@ -113,4 +146,7 @@ class TopicGraphNet(nn.Module):
         fast_concept_result = torch.sum(fast_concept_result, dim=1) / fast_concept_result.size(1)
         
         aggregated_embeddings = torch.cat([slow_attention_agg, fast_attention_agg, slow_concept_result, fast_concept_result], dim=1)
-        return self.mlp(aggregated_embeddings)
+        result = self.mlp(aggregated_embeddings)
+        # print(result)
+        return result
+

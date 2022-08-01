@@ -1,17 +1,17 @@
 import math
 import torch
 import torch.nn as nn
-from .attention import Attention
-from .score_net import ScoreNet
-from .branch_score_net import BranchScoreNet, LateFusionScoreNet, MiddleFusionScoreNet
-from .topic_net import TopicNet
-from .topic_graph_net import TopicGraphNet
-from .branch_topic_graph_net import BranchTopicGraphNet
+from .score_net.attention import Attention
+from .score_net.score_net import ScoreNet
+from .score_net.branch_score_net import BranchScoreNet, LateFusionScoreNet, MiddleFusionScoreNet
+from .intent_net.topic_net import TopicNet
+from .intent_net.topic_graph_net import TopicGraphNet
+from .intent_net.branch_topic_graph_net import BranchTopicGraphNet
 from .feature_encoder import FeatureEncoder
 from .embedding import VariationalEmbedding, VanillaEmbedding
-from .query_decoder import QueryDecoder
-from .video_agnostic_topic_net import VideoAttentionTopicNet, VideoAgnosticTopicNet
-from .plain_feature import PlainFeatureEncoder
+from .intent_net.query_decoder import QueryDecoder
+from .intent_net.video_agnostic_topic_net import VideoAttentionTopicNet, VideoAgnosticTopicNet
+from .feature_encoder.plain_feature import PlainFeatureEncoder
 
 
 class TopicAwareModel(nn.Module):
