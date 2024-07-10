@@ -45,4 +45,4 @@ The gcn directory stores the code for implementing GCN. Some of the code is coll
 We put the preprocessing code for visual query dataset in the notebooks directory.
 
 ### Checkpoint
-We are sorry that we are not able to provide the checkpoint file due to the file limit on Microsoft CMT. However, we will make it publicly available after the review period.
+The checkpoint is available on [Google Drive](https://drive.google.com/file/d/1sF7aGYvJUGWgwNz8Xkubs1ptIOPUHNmW/view?usp=share_link).
